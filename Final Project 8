@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+</script>
+<html>
+
+<body>
+    <!-- The Canvas tag sets up a screen in the browser that we can draw to. -->
+    <canvas></canvas>
+
+    <script type="text/javascript">
+        // This is where we are going to store the mouse information
+        var mouseX =10;
+        var mouseY =30;
+      // We really need this
+        var TWO_PI = Math.PI * 2;
+        var K1 = 3/19;
+        var K2 = 2/10;
+        var K3 = 1/6;
+        var K4 = 9/2;
+
+        // This gets a reference to the canvas in the browser
+
+        var canvas = document.querySelector("canvas");
+
+        // This sets the width and height to the document window
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Be aware that when you resize the window, you will need to call (do) this again
+
+        // This creates a 2d drawing 'context' in your canvas
+        // All your drawing will be done in this canvas
+        var context = canvas.getContext("2d");
+       
+        //This tells the browser to get the mouse information from the function we've called getMouse
+        canvas.addEventListener('mousemove', getMouse, false);
+
+        //here's our function 'getMouse'.
+        function getMouse(mousePosition) {
+                mouseX = mousePosition.layerX;
+                mouseY = mousePosition.layerY;
+        }
+      
+
+
+        // This function translates the canvas so that we're looking at it from a different position, meaning that 0,0 is somewhere else
+        
+        let seg = 1
+        let r = 1
+        var direction = 1 
+        var speed = 0.5
+        var k = 1
+        var kspeed = 0.0001
+      
+        let delta, deltaM
+        let lastFrameTime = 0
+
+        let flowers = []
+
+        function setup(){
+
+          for (let i = 0; i < 20; i++){
+          createFlower({k:1/i, segments:500, radius:100, color:randomColor()})
+          //createFlower({k:3/19, segments:500, radius:100, color:"#00C0CB"})
+          }
+          requestAnimationFrame(draw);
+        }
+
+        
+
+        function draw() {
+
+            const d = new Date();
+            let timeNow = d.getTime()
+            delta =  timeNow - lastFrameTime
+            deltaM = delta / 1000
+            //console.log(`delta ${delta} deltaM ${deltaM}`)
+            lastFrameTime = timeNow 
+            
+         // context.clearRect(0,0, canvas.width, canvas.height);
+         context.fillStyle = "rgb(255, 228, 225)";
+         context.fillRect(0,0, canvas.width, canvas.height)
+
+         for (let f of flowers){
+          f.draw()
+         }
+
+
+
+         /*
+        drawFlower(K4, seg, 200, 400, 400, "#FFC0CB")
+          seg++
+          drawFlower(K1, seg, 200, 400, 400, "#FFFF00")
+          seg++
+          drawFlower(k,1000, 200, 300, 200, "#87CEFA")
+          k += (kspeed * direction)
+          drawFlower(K3,500,r, 100, 100, "#9932CC")
+          r += (speed * direction)
+          drawFlower(K4,500,r, 700, 400, "#EE82EE")
+          r += (direction * kspeed)
+          drawFlower(K2,600,200, 200, 550, "#FFFFFF")
+          K2 += (kspeed * direction)
+          if (direction == 1 && r > 200) direction = -1
+          if (direction == -1 && r < 10) direction = 1
+          */
+          drawFpsToCanvas();
+		    requestAnimationFrame(draw);
+        } // draw function
+
+
+        //request the first animation frame
+        
+        //the end.
+
+        function drawFlower(K,segments, radius, offsetX, offsetY, color){
+		      //console.log (K)
+          var spacing = TWO_PI / segments;
+          context.beginPath();
+          for (var i = 0; i < segments; i++) {
+            context.strokeStyle = color; //set the line colour to black
+            var x = Math.sin(spacing * i * (mouseX/50)) * Math.cos(spacing * i  * (mouseY/50)) * Math.sin(K * i) * radius;
+            var y = Math.sin(spacing * i * (mouseX/50)) * Math.sin(spacing * i  * (mouseY/50)) * Math.sin(K * i) * radius;  
+            context.lineTo(x + offsetX,y + offsetY); 
+          }
+          context.stroke(); //draw the outline			
+          context.closePath();
+        } // drawFlower()
+
+        function drawFpsToCanvas(){
+            context.fillStyle = "rgb(0,0,0)"
+            context.fillText("FPS:" + Math.round(1000 / delta), 10, 10)
+        }
+        function randomRange(low, high){
+          let rDist = Math.abs(low - high)
+          let r = Math.random() * rDist
+          return low + r
+        }
+        function randomRangeRound(low, high){
+          return Math.round(randomRange(low, high))
+        }        
+        function randomColor(){
+          return `rgb(${randomRangeRound(0,255)},${randomRangeRound(0,255)},${randomRangeRound(0,255)})`
+        }
+
+        function createFlower(args){
+          let f = new Flower(args)
+          flowers.push(f)
+        }
+
+        class Flower{
+          constructor({k, segments, radius, color}){
+            this.k = k
+            this.segments = segments
+            this.radius = radius
+
+
+            this.pos = {x:randomRange(0,canvas.width), y:randomRange(0,canvas.height)}
+            this.vel = {x:randomRange(-2,2), y:randomRange(-2,2)}
+            this.color = color
+            console.log("flower created")
+            console.log(this)
+          }
+          update(){
+            this.pos.x += this.vel.x
+            this.pos.y += this.vel.y
+
+            if (this.vel.y < 0 && this.pos.y < 0) this.vel.y = this.vel.y * -1
+            if (this.vel.x < 0 && this.pos.x < 0) this.vel.x = this.vel.x * -1
+            if (this.vel.x > 0 && this.pos.x > canvas.width) this.vel.x = this.vel.x * -1
+            if (this.vel.y > 0 && this.pos.y > canvas.height) this.vel.y = this.vel.y * -1
+
+            // console.log(this.pos)
+          }
+          draw(){
+            this.update()
+            var spacing = TWO_PI / this.segments;
+            context.beginPath();
+            for (var i = 0; i < this.segments; i++) {
+              context.strokeStyle = this.color; //set the line colour to black
+              var x = Math.sin(spacing * i * (mouseX/50)) * Math.cos(spacing * i  * (mouseY/50)) * Math.sin(this.k * i) * this.radius;
+              var y = Math.sin(spacing * i * (mouseX/50)) * Math.sin(spacing * i  * (mouseY/50)) * Math.sin(this.k * i) * this.radius;  
+              context.lineTo(x + this.pos.x, y + this.pos.y); 
+            }
+            context.stroke(); //draw the outline			
+            context.closePath();
+          }
+        }
+
+
+
+
+        setup()
+
+    </script>
+
+</body>
+
+</html>
